@@ -137,4 +137,35 @@ public class NewsLoaderTest {
         assertThat(subsciptionArgument.getValue(), Matchers.comparesEqualTo(SubsciptionType.A));
     }
 
+    @Test
+    public void CheckIfIncomingNewsWithOnePublicInfoWillBeCorrectlyLoaded() {
+        IncomingNews incomingNews;
+        NewsLoader newsLoader;
+
+        incomingNews = new IncomingNews();
+        incomingNews.add(new IncomingInfo("NONE", SubsciptionType.NONE));
+
+        NewsReader newsReader = Mockito.mock(NewsReader.class);
+        Mockito.when(newsReader.read())
+               .thenReturn(incomingNews);
+
+        mockStatic(NewsReaderFactory.class);
+
+        when(NewsReaderFactory.getReader(any(String.class))).thenReturn(newsReader);
+
+        newsLoader = new NewsLoader();
+
+        PublishableNews publishableNews = Mockito.mock(PublishableNews.class);
+
+        mockStatic(PublishableNews.class);
+        when(PublishableNews.create()).thenReturn(publishableNews);
+
+        newsLoader.loadNews();
+
+        ArgumentCaptor<String> stringArgument = ArgumentCaptor.forClass(String.class);
+
+        verify(publishableNews).addPublicInfo(stringArgument.capture());
+        assertThat(stringArgument.getValue(), Matchers.comparesEqualTo("NONE"));
+    }
+
 }
