@@ -1,14 +1,17 @@
 package edu.iis.mto.staticmock;
 
+import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -99,6 +102,39 @@ public class NewsLoaderTest {
 
         newsLoader.loadNews();
         verify(publishableNews, times(1)).addForSubscription(any(String.class), any(SubsciptionType.class));
+    }
+
+    @Test
+    public void CheckIfIncomingNewsWithOneSubscriptedInfoWillBeCorrectlyLoaded() {
+        IncomingNews incomingNews;
+        NewsLoader newsLoader;
+
+        incomingNews = new IncomingNews();
+        incomingNews.add(new IncomingInfo("A", SubsciptionType.A));
+
+        NewsReader newsReader = Mockito.mock(NewsReader.class);
+        Mockito.when(newsReader.read())
+               .thenReturn(incomingNews);
+
+        mockStatic(NewsReaderFactory.class);
+
+        when(NewsReaderFactory.getReader(any(String.class))).thenReturn(newsReader);
+
+        newsLoader = new NewsLoader();
+
+        PublishableNews publishableNews = Mockito.mock(PublishableNews.class);
+
+        mockStatic(PublishableNews.class);
+        when(PublishableNews.create()).thenReturn(publishableNews);
+
+        newsLoader.loadNews();
+
+        ArgumentCaptor<String> stringArgument = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<SubsciptionType> subsciptionArgument = ArgumentCaptor.forClass(SubsciptionType.class);
+
+        verify(publishableNews).addForSubscription(stringArgument.capture(), subsciptionArgument.capture());
+        assertThat(stringArgument.getValue(), Matchers.comparesEqualTo("A"));
+        assertThat(subsciptionArgument.getValue(), Matchers.comparesEqualTo(SubsciptionType.A));
     }
 
 }
